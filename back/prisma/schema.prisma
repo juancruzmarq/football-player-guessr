@@ -1,0 +1,56 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Player {
+  id                      Int       @id @default(autoincrement())
+  name                    String
+  fullName                String    @map("full_name")
+  birthDate               DateTime? @map("birth_date")
+  heightCm                Float?    @map("height_cm")
+  weightKgs               Float?    @map("weight_kgs")
+  positions               String?
+  nationality             String?
+  overallRating           Int?      @map("overall_rating")
+  potential               Int?
+  preferredFoot           String?   @map("preferred_foot")
+  internationalReputation Int?      @map("international_reputation")
+  weakFoot                Int?      @map("weak_foot")
+  skillMoves              Int?      @map("skill_moves")
+  bodyType                String?   @map("body_type")
+  difficulty              String
+
+  easyDays     DailyPlayers[] @relation("EasyPlayer")
+  mediumDays   DailyPlayers[] @relation("MediumPlayer")
+  hardDays     DailyPlayers[] @relation("HardPlayer")
+  veryHardDays DailyPlayers[] @relation("VeryHardPlayer")
+
+  @@map("players")
+}
+
+model DailyPlayers {
+  id               Int      @id @default(autoincrement())
+  date             DateTime @unique
+  easyPlayerId     Int      @map("easy_player_id")
+  mediumPlayerId   Int      @map("medium_player_id")
+  hardPlayerId     Int      @map("hard_player_id")
+  veryHardPlayerId Int      @map("very_hard_player_id")
+
+  easyPlayer     Player @relation("EasyPlayer", fields: [easyPlayerId], references: [id])
+  mediumPlayer   Player @relation("MediumPlayer", fields: [mediumPlayerId], references: [id])
+  hardPlayer     Player @relation("HardPlayer", fields: [hardPlayerId], references: [id])
+  veryHardPlayer Player @relation("VeryHardPlayer", fields: [veryHardPlayerId], references: [id])
+
+  @@map("daily_players")
+}

@@ -1,0 +1,13 @@
+-- AlterTable
+ALTER TABLE "players" ALTER COLUMN "birth_date" DROP NOT NULL,
+ALTER COLUMN "height_cm" DROP NOT NULL,
+ALTER COLUMN "weight_kgs" DROP NOT NULL,
+ALTER COLUMN "positions" DROP NOT NULL,
+ALTER COLUMN "nationality" DROP NOT NULL,
+ALTER COLUMN "overall_rating" DROP NOT NULL,
+ALTER COLUMN "potential" DROP NOT NULL,
+ALTER COLUMN "preferred_foot" DROP NOT NULL,
+ALTER COLUMN "international_reputation" DROP NOT NULL,
+ALTER COLUMN "weak_foot" DROP NOT NULL,
+ALTER COLUMN "skill_moves" DROP NOT NULL,
+ALTER COLUMN "body_type" DROP NOT NULL;
