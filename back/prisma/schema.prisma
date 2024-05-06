@@ -41,7 +41,7 @@ model Player {
 
 model DailyPlayers {
   id               Int      @id @default(autoincrement())
-  date             DateTime @unique
+  date             DateTime @unique @map("date") // Date type 
   easyPlayerId     Int      @map("easy_player_id")
   mediumPlayerId   Int      @map("medium_player_id")
   hardPlayerId     Int      @map("hard_player_id")

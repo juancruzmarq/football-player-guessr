@@ -11,10 +11,20 @@ export class AppController {
     try {
       const filters: Prisma.PlayerFindManyArgs = {
         where: {
-          name: {
-            contains: name,
-            mode: 'insensitive',
-          },
+          OR: [
+            {
+              name: {
+                contains: name,
+                mode: 'insensitive',
+              },
+            },
+            {
+              fullName: {
+                contains: name,
+                mode: 'insensitive',
+              },
+            },
+          ],
         },
         orderBy: {
           internationalReputation: 'desc',
@@ -31,7 +41,18 @@ export class AppController {
     try {
       return await this.appService.getTodayDailyPlayers();
     } catch (error) {
+      console.log(error);
       throw new Error('Could not get today daily players');
+    }
+  }
+
+  @Get('/randoms')
+  async getRandomPlayers(): Promise<Player[]> {
+    try {
+      return await this.appService.getRandomsPlayers();
+    } catch (error) {
+      console.log(error);
+      throw new Error('Could not get random players');
     }
   }
 }

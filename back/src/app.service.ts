@@ -27,8 +27,7 @@ export class AppService {
     }
   }
 
-  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
-  async generateTodayPlayers(): Promise<void> {
+  async getRandomsPlayers(): Promise<Player[]> {
     try {
       // 1 Random easy player
       const easyPlayer = await this.getRandomPlayer(Difficulty.EASY);
@@ -38,6 +37,19 @@ export class AppService {
       const hardPlayer = await this.getRandomPlayer(Difficulty.HARD);
       // 1 Random very hard player
       const veryHardPlayer = await this.getRandomPlayer(Difficulty.VERY_HARD);
+
+      return [easyPlayer, mediumPlayer, hardPlayer, veryHardPlayer];
+    } catch (error) {
+      throw new Error('Could not find players');
+    }
+  }
+
+  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+  async generateTodayPlayers(): Promise<void> {
+    try {
+      // Get randoms players
+      const [easyPlayer, mediumPlayer, hardPlayer, veryHardPlayer] =
+        await this.getRandomsPlayers();
 
       // Create today players
       await this.prisma.dailyPlayers.create({
@@ -49,6 +61,8 @@ export class AppService {
           veryHardPlayerId: veryHardPlayer.id,
         },
       });
+
+      return;
     } catch (error) {
       throw new Error('Could not generate today players');
     }
@@ -87,19 +101,37 @@ export class AppService {
     try {
       const todayDailyPlayers = await this.prisma.dailyPlayers.findFirst({
         where: {
-          date: new Date(),
+          date: {
+            gte: new Date(new Date().setHours(0, 0, 0, 0)),
+            lt: new Date(new Date().setHours(23, 59, 59, 999)),
+          },
+        },
+        include: {
+          easyPlayer: true,
+          mediumPlayer: true,
+          hardPlayer: true,
+          veryHardPlayer: true,
         },
       });
 
       if (!todayDailyPlayers) {
-        throw new Error('Could not find today daily players');
+        await this.generateTodayPlayers();
+      } else {
+        return todayDailyPlayers;
       }
-
-      await this.generateTodayPlayers();
 
       const players = await this.prisma.dailyPlayers.findFirst({
         where: {
-          date: new Date(),
+          date: {
+            gte: new Date(new Date().setHours(0, 0, 0, 0)),
+            lt: new Date(new Date().setHours(23, 59, 59, 999)),
+          },
+        },
+        include: {
+          easyPlayer: true,
+          mediumPlayer: true,
+          hardPlayer: true,
+          veryHardPlayer: true,
         },
       });
 
