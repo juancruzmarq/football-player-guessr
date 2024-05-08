@@ -28,7 +28,7 @@ export const FootSelector = ({ onPositionChange, selectedPositions }) => {
       {foots.map((foot, index) => (
         <button
           key={index}
-          className={`rounded text-xl text-white font-bold py-2 px-6 ${localSelectedFoot?.includes(foot) ? 'bg-secondary hover:bg-secondary/50' : 'bg-text hover:bg-secondary'}`}
+          className={`rounded text-xl text-white font-bold py-2 px-6 ${localSelectedFoot?.includes(foot) ? 'bg-slate-500 hover:bg-slate-500/50' : 'bg-slate-300 hover:bg-slate-400'}`}
           onClick={() => handlePositionClick(foot)}
         >
           {foot}

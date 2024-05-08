@@ -1,6 +1,4 @@
 import { useEffect } from 'react'
-import { DailyPlayers, Player } from './types/Player.type';
-import axios from 'axios'
 import { Countries } from './countries';
 import { Difficulty } from './types/Difficulty.type';
 import { PositionSelector } from './components/PositionSelector';
@@ -11,6 +9,8 @@ import { Foot } from './types/Foot.type';
 import { useAppContext } from './AppProvider';
 import { Position } from './types/Positions.type';
 import { Button } from './components/Button';
+import { api } from './api/api';
+import { calculatePoints } from './utils/pointsCalculator';
 
 export type PlayerCharacteristic = {
   name: string
@@ -20,35 +20,17 @@ export type PlayerCharacteristic = {
   renderComponent: () => JSX.Element
 }
 
-const url = 'http://localhost:3000/'
-
-export const api = {
-  getTodayDailyPlayers: async () => {
-    const response = await axios.get<DailyPlayers>(`${url}players/today-daily-players`)
-    return response.data
-  },
-  getPlayers: async (name: string) => {
-    const response = await axios.get<Player[]>(`${url}players?name=${name}`)
-    return response.data
-  },
-  getRandomsPlayers: async () => {
-    const response = await axios.get<DailyPlayers>(`${url}players/randoms`)
-    return response.data
-  }
-}
-
 function App() {
   const { state, dispatch } = useAppContext();
   console.log(state)
-  const { difficultySelected, player, dailyPlayers, selectedPositions, selectedFoot, selectedWeight, selectedHeight, characteristicSelected, selectedNationality, selectedBirthDate } = state;
+  const { difficultySelected, player, dailyPlayers, selectedPositions, points, selectedFoot, selectedWeight, selectedHeight, characteristicSelected, selectedNationality, selectedBirthDate } = state;
 
  const handleChange = (field, value) => {
   dispatch({
     type: 'UPDATE_PLAYER_DETAIL',
     payload: { field, value }
   });
-};
-
+  };
   const orderedCountries = Countries.sort((a, b) => a.name.localeCompare(b.name))
 
   useEffect(() => {
@@ -81,7 +63,6 @@ function App() {
         dispatch({ type: 'SET_PLAYER', payload: dailyPlayers?.veryHardPlayer })
         break
     }
-
   }
 
 
@@ -112,12 +93,12 @@ function App() {
       renderComponent: () => (
         <NumberInput
           value={selectedHeight}
-          onChange={(e) => handleChange('selectedHeight', e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('selectedHeight', e.target.value)}
           min={150}
           max={220}
           step={1}
           placeholder='Enter the height of the player'
-          title={'Select the height (cm) of the player'}
+          title={'Enter the height (cm) of the player'}
         />
       )
       
@@ -130,12 +111,12 @@ function App() {
       renderComponent: () => (
         <NumberInput
           value={selectedWeight}
-          onChange={(e) => handleChange('selectedWeight', e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('selectedWeight', e.target.value)}
           min={30}
           max={150}
           step={1}
           placeholder='Enter the weight of the player'
-          title={'Select the weight (kg) of the player'}
+          title={'Enter the weight (kg) of the player'}
         />
       )
       
@@ -179,7 +160,7 @@ function App() {
 
   const renderSelectedCharacteristic = () => {
     if (!characteristicSelected) {
-      return <h2 className="text-xl font-bold bg-text text-white px-4 py-2 m-4 rounded-md">Select a characteristic to guess</h2>
+      return <h2 className="text-xl font-bold px-4 py-2 m-4 rounded-md">Select a characteristic to guess</h2>
     }
     return characteristicSelected.renderComponent();
   };
@@ -194,28 +175,28 @@ function App() {
       </section>
 
       {/* Select the difficulty of the game */}
-      <section className={`container mx-auto text-center bg-primary p-8 rounded-sm`}>
+      <section className={`container mx-auto text-center bg-slate-200 p-8 rounded-sm`}>
         <div className="flex justify-center gap-2 gap-x-10">
           <button
-            className={` hover:bg-secondary text-white font-bold py-2 px-6 rounded ${difficultySelected === Difficulty.EASY ? 'bg-accent' : 'bg-text'}`}
+            className={`  text-text shadow-sm shadow-primary font-bold py-2 px-6 rounded ${difficultySelected === Difficulty.EASY ? 'bg-slate-500 text-white' : 'bg-slate-300 hover:bg-slate-400'}`}
             onClick={() => handleDifficulty(Difficulty.EASY)}
           >
             Easy
           </button>
           <button
-            className={` hover:bg-secondary text-white font-bold py-2 px-6 rounded ${difficultySelected === Difficulty.MEDIUM ? 'bg-accent' : 'bg-text'}`}
+            className={`  text-text shadow-sm shadow-primary  font-bold py-2 px-6 rounded ${difficultySelected === Difficulty.MEDIUM ? 'bg-slate-500 text-white' : 'bg-slate-300 hover:bg-slate-400'}`}
             onClick={() => handleDifficulty(Difficulty.MEDIUM)}
           >
             Medium
           </button>
           <button
-            className={` hover:bg-secondary text-white font-bold py-2 px-6 rounded ${difficultySelected === Difficulty.HARD ? 'bg-accent' : 'bg-text'}`}
+            className={`  text-text shadow-sm shadow-primary  font-bold py-2 px-6 rounded ${difficultySelected === Difficulty.HARD ? 'bg-slate-500 text-white' : 'bg-slate-300 hover:bg-slate-400'}`}
             onClick={() => handleDifficulty(Difficulty.HARD)}
           >
             Hard
           </button>
           <button
-            className={` hover:bg-secondary text-white font-bold py-2 px-6 rounded ${difficultySelected === Difficulty.VERY_HARD ? 'bg-accent' : 'bg-text'}`}
+            className={`  text-text shadow-sm shadow-primary  font-bold py-2 px-6 rounded ${difficultySelected === Difficulty.VERY_HARD ? 'bg-slate-500 text-white' : 'bg-slate-300 hover:bg-slate-400'}`}
             onClick={() => handleDifficulty(Difficulty.VERY_HARD)}
           >
             Very Hard
@@ -227,22 +208,22 @@ function App() {
       <div className="relative container mx-auto">
         {/* Blur overlay */}
         {!difficultySelected && (
-          <div className="absolute inset-0 bg-green-200/10 backdrop-blur-sm z-30"></div>
+          <div className="absolute inset-0 bg-slate-100/20 backdrop-blur-sm z-30"></div>
         )}
         {/* Game content */}
         <section className={`flex flex-col text-center gap-11 my-10 items-center`}>
           {player ? (
-            <div className="inline-flex flex-col items-center bg-text px-4 py-2 text-white justify-center rounded-lg gap-2">
-            <h2 className="text-2xl font-bold">{player?.name}</h2>
-            <p className="text-sm font-mono">{player?.fullName}</p>
+            <div className="inline-flex flex-col items-center bg-slate-500 text-white px-4 py-2  justify-center rounded-lg gap-2">
+              <h2 className="text-2xl font-bold">{player?.name}</h2>
+              <p className="text-sm font-mono">{player?.fullName}</p>
           </div>
           ) : (
-            <div className="inline-flex flex-col items-center bg-text px-4 py-2 text-white justify-center rounded-lg gap-2">
-            <h2 className="text-2xl font-bold ">Not Player Selected</h2>
-            <p className="text-sm font-mono">Not Player Selected</p>
-          </div>
+            <div className="inline-flex flex-col items-center bg-slate-500 text-white px-4 py-2  justify-center rounded-lg gap-2">
+              <h2 className="text-2xl font-bold ">Not Player Selected</h2>
+              <p className="text-sm font-mono">Not Player Selected</p>
+            </div>
           )}
-          <div className="w-80 h-80 bg-primary rounded-full mx-auto relative flex items-center justify-center border-green-300/40 border shadow-text/40 shadow-lg">
+          <div className="w-80 h-80 bg-slate-400 rounded-full mx-auto relative flex items-center justify-center shadow-lg">
             {
                   player  && player.photoUrl !== "" && (
                     <img
@@ -259,33 +240,50 @@ function App() {
                   transform: `rotate(${index * angle}deg) translate(170px) rotate(-${index * angle}deg)`
                 }}
               >
-                <Button
-                  onClick={() => dispatch({ type: 'SET_CHARACTERISTIC', payload: char })}
-                  disabled={!difficultySelected}
-                  key={char.name}
-                >
-                  {char.name}
-                </Button>
-                {/* <button 
-                  className={`hover:bg-secondary text-white font-bold py-2 px-6 rounded ${characteristicSelected?.name === char.name ? 'bg-secondary' : 'bg-text'}`}
-                  onClick={() => dispatch({ type: 'SET_CHARACTERISTIC', payload: char })}
-                  disabled={!difficultySelected}
-                >
-                  {char.name}
-                </button> */}
                 
+              <Button
+                onClick={() => dispatch({ type: 'SET_CHARACTERISTIC', payload: char })}
+                disabled={!difficultySelected}
+                key={char.name}
+                className={`${characteristicSelected?.name === char.name ? 'bg-slate-500 text-white' : 'bg-slate-300 hover:bg-slate-400'}`}
+              >
+              {char.name}
+              </Button>
               </div>
             ))}
           </div>
         </section>
         
         {/* Input of the user */}
-        <section className={`text-center bg-primary items-center p-2`}>
+        <section className={`text-center bg-slate-200 items-center p-2`}>
           <div className="flex justify-center gap-2">
             {renderSelectedCharacteristic()}
           </div>
         </section>
       </div>
+
+      {/* Submit button */}
+      <section className={`container mx-auto text-center bg-slate-200 p-8 rounded-sm`}>
+        {
+          player && (
+             <Button
+              onClick={() => dispatch({ type: 'CALCULATE_POINTS'})}
+              disabled={!characteristicSelected}
+              className={`${characteristicSelected ? 'bg-slate-500 text-white' : 'bg-slate-300 hover:bg-slate-400'}`}
+            >
+              Submit
+            </Button>
+          )
+        }
+        {
+          points !== undefined && (
+            <div className="text-center">
+              <h2 className="text-2xl font-bold">Points</h2>
+              <p className="text-4xl font-bold">{points}</p>
+            </div>
+          )
+        }
+      </section>
     </div>
   )
 }

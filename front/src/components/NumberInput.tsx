@@ -14,7 +14,7 @@ export const NumberInput = ({ value,  onChange, min, max, step, placeholder, tit
       min={min}
       max={max}
       step={step}
-      className="form-input px-6 py-2 rounded-md border border-secondary bg-text text-white font-bold focus:outline-none focus:border-secondary"
+      className="form-input px-6 py-2 rounded-md border border-secondary bg-slate-400 font-bold focus:outline-none focus:border-secondary"
     />
     </div>
   );

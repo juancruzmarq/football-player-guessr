@@ -6,13 +6,7 @@ export default {
   ],
   theme: {
     extend: {
-      colors: {
-        'text': '#121714',
-        'background': '#f7f9f8',
-        'primary': '#708f81',
-        'secondary': '#c4b4ba',
-        'accent': '#aea797',
-      },
+      
     },
   },
   plugins: [],

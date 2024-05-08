@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { positions } from '../positions';
 import { Position } from '../types/Positions.type';
 import { CharacteristicTitle } from './CharacteristicTitle';
+import { Button } from './Button';
 
 export const PositionSelector = ({ onPositionChange, selectedPositions }) => {
   const [localSelectedPositions, setLocalSelectedPositions] = useState<Position[]>([]);
@@ -26,14 +27,14 @@ export const PositionSelector = ({ onPositionChange, selectedPositions }) => {
     <div>
       <CharacteristicTitle title='Select the position of the player' />
       <div className='grid grid-cols-5 gap-2 justify-center items-center mx-auto'>
-        {positions.map((position, index) => (
-          <button
-            key={index}
-            className={`rounded text-white font-bold py-2 px-6 ${localSelectedPositions.includes(position) ? 'bg-secondary hover:bg-secondary/50' : 'bg-text hover:bg-text/50'}`}
+        {positions.map((position) => (
+          <Button
+            key={position}
+            className={`${localSelectedPositions.includes(position) ? 'bg-slate-500 text-white hover:bg-slate-500/50' : 'bg-slate-300 hover:bg-slate-400'}`}
             onClick={() => handlePositionClick(position)}
           >
             {position}
-          </button>
+          </Button>
         ))}
       </div>
     </div>

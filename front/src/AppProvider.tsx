@@ -3,6 +3,7 @@ import { DailyPlayers, Player } from './types/Player.type';
 import { Position } from './types/Positions.type';
 import { Foot } from './types/Foot.type';
 import { PlayerCharacteristic } from './App';
+import { calculatePoints } from './utils/pointsCalculator';
 
 // Crear el contexto
 
@@ -10,6 +11,7 @@ type State = {
     difficultySelected: string | undefined;
     characteristicSelected: PlayerCharacteristic | undefined;
     player: Player | undefined;
+    points: number;
     dailyPlayers: DailyPlayers | undefined;
     selectedPositions: Position[] | undefined | [];
     selectedFoot: Foot | undefined;
@@ -27,6 +29,7 @@ const initialState: State = {
   difficultySelected: undefined,
   characteristicSelected: undefined,
   player: undefined,
+  points: 0,
   dailyPlayers: undefined,
   selectedPositions: [],
   selectedFoot: undefined,
@@ -65,6 +68,8 @@ function reducer(state: State, action: { type: string; payload: any }) {
       return { ...state, selectedFoot: action.payload };
     case 'SET_SELECTED_VALUE':
       return { ...state, selectedValue: action.payload };
+    case 'CALCULATE_POINTS':
+      return { ...state, points: calculatePoints(state.player as Player, state) };
     case 'UPDATE_PLAYER_DETAIL':
       return { ...state, [action.payload.field]: action.payload.value };
     default:
