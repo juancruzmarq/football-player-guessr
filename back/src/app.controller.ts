@@ -1,5 +1,5 @@
 import { Controller, Get, Query } from '@nestjs/common';
-import { AppService } from './app.service';
+import { AppService, DailyPlayersWithRelations } from './app.service';
 import { DailyPlayers, Player, Prisma } from '@prisma/client';
 
 @Controller('/players')
@@ -47,7 +47,7 @@ export class AppController {
   }
 
   @Get('/randoms')
-  async getRandomPlayers(): Promise<Player[]> {
+  async getRandomPlayers(): Promise<DailyPlayersWithRelations> {
     try {
       return await this.appService.getRandomsPlayers();
     } catch (error) {

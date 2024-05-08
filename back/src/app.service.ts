@@ -10,6 +10,15 @@ export enum Difficulty {
   VERY_HARD = 'Very Hard',
 }
 
+export type DailyPlayersWithRelations = Prisma.DailyPlayersGetPayload<{
+  include: {
+    easyPlayer: true;
+    mediumPlayer: true;
+    hardPlayer: true;
+    veryHardPlayer: true;
+  };
+}>;
+
 @Injectable()
 export class AppService {
   constructor(private readonly prisma: PrismaService) {}
@@ -27,7 +36,7 @@ export class AppService {
     }
   }
 
-  async getRandomsPlayers(): Promise<Player[]> {
+  async getRandomsPlayers(): Promise<DailyPlayersWithRelations> {
     try {
       // 1 Random easy player
       const easyPlayer = await this.getRandomPlayer(Difficulty.EASY);
@@ -38,7 +47,20 @@ export class AppService {
       // 1 Random very hard player
       const veryHardPlayer = await this.getRandomPlayer(Difficulty.VERY_HARD);
 
-      return [easyPlayer, mediumPlayer, hardPlayer, veryHardPlayer];
+      const dailyPlayers: DailyPlayersWithRelations = {
+        id: 0,
+        date: new Date(),
+        easyPlayerId: easyPlayer.id,
+        mediumPlayerId: mediumPlayer.id,
+        hardPlayerId: hardPlayer.id,
+        veryHardPlayerId: veryHardPlayer.id,
+        easyPlayer,
+        mediumPlayer,
+        hardPlayer,
+        veryHardPlayer,
+      };
+
+      return dailyPlayers;
     } catch (error) {
       throw new Error('Could not find players');
     }
@@ -48,7 +70,7 @@ export class AppService {
   async generateTodayPlayers(): Promise<void> {
     try {
       // Get randoms players
-      const [easyPlayer, mediumPlayer, hardPlayer, veryHardPlayer] =
+      const { easyPlayer, mediumPlayer, hardPlayer, veryHardPlayer } =
         await this.getRandomsPlayers();
 
       // Create today players

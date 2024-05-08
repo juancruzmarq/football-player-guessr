@@ -30,6 +30,7 @@ model Player {
   skillMoves              Int?      @map("skill_moves")
   bodyType                String?   @map("body_type")
   difficulty              String
+  photoUrl                String?   @map("photo_url")
 
   easyDays     DailyPlayers[] @relation("EasyPlayer")
   mediumDays   DailyPlayers[] @relation("MediumPlayer")

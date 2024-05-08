@@ -28,4 +28,5 @@ export interface Player {
     skillMoves:              number;
     bodyType:                string;
     difficulty:              string;
+    photoUrl:                string;
 }

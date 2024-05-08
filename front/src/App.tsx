@@ -1,17 +1,23 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { DailyPlayers, Player } from './types/Player.type';
 import axios from 'axios'
 import { Countries } from './countries';
-import { Position } from './types/Positions.type';
 import { Difficulty } from './types/Difficulty.type';
-import { positions } from './positions';
+import { PositionSelector } from './components/PositionSelector';
+import { BirthDateInput } from './components/BirthdateInput';
+import { FootSelector } from './components/PreferedFoot';
+import { NumberInput } from './components/NumberInput';
+import { Foot } from './types/Foot.type';
+import { useAppContext } from './AppProvider';
+import { Position } from './types/Positions.type';
+import { Button } from './components/Button';
 
 export type PlayerCharacteristic = {
   name: string
   apiName: string
   type: 'string' | 'number'
   placeholder: string
-  component?: JSX.Element
+  renderComponent: () => JSX.Element
 }
 
 const url = 'http://localhost:3000/'
@@ -24,65 +30,59 @@ export const api = {
   getPlayers: async (name: string) => {
     const response = await axios.get<Player[]>(`${url}players?name=${name}`)
     return response.data
+  },
+  getRandomsPlayers: async () => {
+    const response = await axios.get<DailyPlayers>(`${url}players/randoms`)
+    return response.data
   }
 }
 
 function App() {
-  const [difficultySelected, setDifficultySelected] = useState<Difficulty>()
-  const [characteristicSelected, setCharacteristicSelected] = useState<PlayerCharacteristic>()
-  const [player, setPlayer] = useState<Player>()
-  const [dailyPlayers, setDailyPlayers] = useState<DailyPlayers>()
-  const [selectedPositions, setSelectedPositions] = useState<Position[]>([])
+  const { state, dispatch } = useAppContext();
+  console.log(state)
+  const { difficultySelected, player, dailyPlayers, selectedPositions, selectedFoot, selectedWeight, selectedHeight, characteristicSelected, selectedNationality, selectedBirthDate } = state;
 
+ const handleChange = (field, value) => {
+  dispatch({
+    type: 'UPDATE_PLAYER_DETAIL',
+    payload: { field, value }
+  });
+};
 
-  const debug = false
-  const border = 'border border-red-400'
   const orderedCountries = Countries.sort((a, b) => a.name.localeCompare(b.name))
 
-
-  const handlePosition = (position: Position) => {
-    setSelectedPositions((prevPositions) => {
-    const index = prevPositions.indexOf(position);
-    if (index !== -1) {
-      // Si la posición ya está seleccionada, la eliminamos
-      return prevPositions.filter((_, i) => i !== index);
-    } else {
-      // Si la posición no está, la añadimos al final del array
-      return [...prevPositions, position];
-    }
-
-  });
-  }
-
   useEffect(() => {
-    api.getTodayDailyPlayers().then((data) => {
-      setDailyPlayers(data)
+    api.getRandomsPlayers().then((data) => {
+      dispatch({ type: 'SET_DAILY_PLAYERS', payload: data })
     })
   }
   , [])
 
   useEffect(() => {
-    
-  }, [selectedPositions])
+    // Ejemplo de cómo podrías actualizar el jugador basado en la dificultad seleccionada
+    if (player && difficultySelected) {
+      dispatch({ type: 'SET_PLAYER', payload: player });
+    }
+  }, [dailyPlayers, difficultySelected]);
 
   const handleDifficulty = (difficulty: Difficulty) => {
-    setDifficultySelected(difficulty)
+    dispatch({ type: 'SET_DIFFICULTY', payload: difficulty })
     switch (difficulty) {
       case Difficulty.EASY:
-        setPlayer(dailyPlayers?.easyPlayer)
+        dispatch({ type: 'SET_PLAYER', payload: dailyPlayers?.easyPlayer })
         break
       case Difficulty.MEDIUM:
-        setPlayer(dailyPlayers?.mediumPlayer)
+        dispatch({ type: 'SET_PLAYER', payload: dailyPlayers?.mediumPlayer })
         break
       case Difficulty.HARD:
-        setPlayer(dailyPlayers?.hardPlayer)
+        dispatch({ type: 'SET_PLAYER', payload: dailyPlayers?.hardPlayer })
         break
       case Difficulty.VERY_HARD:
-        setPlayer(dailyPlayers?.veryHardPlayer)
+        dispatch({ type: 'SET_PLAYER', payload: dailyPlayers?.veryHardPlayer })
         break
     }
-  }
 
+  }
 
 
    const characteristics: PlayerCharacteristic[] = [
@@ -91,15 +91,17 @@ function App() {
       apiName: 'nationality',
       type: 'string',
       placeholder: 'Select the player nationality',
-      component: 
-        <div className='flex justify-center gap-2'>
-          <select >
+      renderComponent: () => (
+         <div className='flex justify-center gap-2'>
+          <select onChange={(e) => handleChange('selectedNationality', e.target.value)} value={selectedNationality}>
             {orderedCountries.map((country, index) => (
-              <option key={index}>
-                {country.name}</option>
+              <option key={index} value={country.name}>
+                {country.name}
+              </option>
             ))}
           </select>
-        </div>
+      </div>
+      )
       
     },
     {
@@ -107,10 +109,17 @@ function App() {
       apiName: 'heightCm',
       type: 'number',
       placeholder: 'Enter the height of the player',
-      component:
-        <div>
-        <input step="1" type='number' placeholder='Enter the height of the player' max={250} min={110} defaultValue={160} key='height'/>
-        </div>
+      renderComponent: () => (
+        <NumberInput
+          value={selectedHeight}
+          onChange={(e) => handleChange('selectedHeight', e.target.value)}
+          min={150}
+          max={220}
+          step={1}
+          placeholder='Enter the height of the player'
+          title={'Select the height (cm) of the player'}
+        />
+      )
       
     },
     {
@@ -118,16 +127,17 @@ function App() {
       apiName: 'weightKgs',
       type: 'number',
       placeholder: 'Enter the weight of the player',
-      component: 
-        <div className='flex justify-center gap-2'>
-        <input step="1" type='number' placeholder='Enter the weight of the player' max={200} min={40} defaultValue={70} key='weight'/>
-        <button
-              className={`bg-green-400 text-white p-2 font-bold rounded ${!characteristicSelected ? 'bg-gray-400 cursor-not-allowed' : 'hover:bg-green-500'}`}
-              disabled={!characteristicSelected}
-            >
-              Submit
-        </button>
-        </div>
+      renderComponent: () => (
+        <NumberInput
+          value={selectedWeight}
+          onChange={(e) => handleChange('selectedWeight', e.target.value)}
+          min={30}
+          max={150}
+          step={1}
+          placeholder='Enter the weight of the player'
+          title={'Select the weight (kg) of the player'}
+        />
+      )
       
     },
     {
@@ -135,80 +145,77 @@ function App() {
       apiName: 'preferredFoot',
       type: 'string',
       placeholder: 'Enter the preferred foot of the player',
-      component: 
-        <div className='flex justify-center gap-2'>
-          <button className='rounded bg-green-400 hover:bg-green-500 text-white font-bold py-2 px-6' value='Left'>Left</button>
-          <button className='rounded bg-green-400 hover:bg-green-500 text-white font-bold py-2 px-6' value='Right'>Right</button>
-        </div>
-      
+      renderComponent: () => (
+        <FootSelector
+          onPositionChange={(foot: Foot) => handleChange('selectedFoot', foot)}
+          selectedPositions={selectedFoot}
+        />
+      )
     },
     {
       name: 'Positions',
       apiName: 'positions',
       type: 'string',
       placeholder: 'Enter the positions of the player',
-      component:
-        <div className='grid grid-cols-5 gap-2'>
-          {positions.map((position: Position, index: number): JSX.Element =>
-            <button
-              key={index}
-              className={`rounded bg-green-400 hover:bg-green-500 text-white font-bold py-2 px-6 ${selectedPositions.includes(position) ? 'bg-green-800' : ''}`}
-              onClick={() => handlePosition(position)}
-            >
-              {position}
-            </button>
-          )}      
-        </div>
-      
+      renderComponent: () => (
+         <PositionSelector
+            onPositionChange={(positions: Position[]) => handleChange('selectedPositions', positions)}
+            selectedPositions={selectedPositions}
+          />
+      )
     },
     {
       name: 'Birth Date',
       apiName: 'birthDate',
       type: 'string',
       placeholder: 'Enter the birth date of the player',
-      component: 
-        <div className='flex justify-center gap-2' key={characteristicSelected?.name}>
-          <input  type='date' placeholder='Enter the birth date of the player' key='birthDate' max={new Date().toISOString().split('T')[0]} />
-        </div>
-      
+      renderComponent: () => (
+        <BirthDateInput selectedValue={selectedBirthDate} onChange={(e) => handleChange('selectedBirthDate', e.target.value)} />
+      )
     }
   ]
 
   const angle = 360 / characteristics.length
 
+  const renderSelectedCharacteristic = () => {
+    if (!characteristicSelected) {
+      return <h2 className="text-xl font-bold bg-text text-white px-4 py-2 m-4 rounded-md">Select a characteristic to guess</h2>
+    }
+    return characteristicSelected.renderComponent();
+  };
+
   return (
-    
-    <div className='bg-green-200/60 min-h-screen mx-auto h-full'>
+    <div className='bg-background min-h-screen mx-auto h-full'>
       {/* Header */}
   
       <section className={`container mx-auto p-8 text-center`}>
-        <h1 className="text-4xl font-bold ">Football Stats Guessr</h1>
-        <p className="text-black/70 font-serif">Guess the football player's characteristics</p>
+        <h1 className="text-4xl font-bold text-text ">Football Stats Guessr</h1>
+        <p className="text-text/70 font-serif">Guess the football player's characteristics</p>
       </section>
 
       {/* Select the difficulty of the game */}
-      <section className={`container mx-auto text-center bg-green-300/40 p-8 rounded-sm`}>
+      <section className={`container mx-auto text-center bg-primary p-8 rounded-sm`}>
         <div className="flex justify-center gap-2 gap-x-10">
           <button
-            className={` hover:bg-green-700 text-white font-bold py-2 px-6 rounded ${difficultySelected === Difficulty.EASY ? 'bg-green-800' : 'bg-green-500'}`}
+            className={` hover:bg-secondary text-white font-bold py-2 px-6 rounded ${difficultySelected === Difficulty.EASY ? 'bg-accent' : 'bg-text'}`}
             onClick={() => handleDifficulty(Difficulty.EASY)}
           >
             Easy
           </button>
           <button
-            className={` hover:bg-green-700 text-white font-bold py-2 px-6 rounded ${difficultySelected === Difficulty.MEDIUM ? 'bg-green-800' : 'bg-green-500'}`}
+            className={` hover:bg-secondary text-white font-bold py-2 px-6 rounded ${difficultySelected === Difficulty.MEDIUM ? 'bg-accent' : 'bg-text'}`}
             onClick={() => handleDifficulty(Difficulty.MEDIUM)}
           >
             Medium
           </button>
           <button
-            className={` hover:bg-green-700 text-white font-bold py-2 px-6 rounded ${difficultySelected === Difficulty.HARD ? 'bg-green-800' : 'bg-green-500'}`}
+            className={` hover:bg-secondary text-white font-bold py-2 px-6 rounded ${difficultySelected === Difficulty.HARD ? 'bg-accent' : 'bg-text'}`}
             onClick={() => handleDifficulty(Difficulty.HARD)}
           >
             Hard
           </button>
           <button
-            className={` hover:bg-green-700 text-white font-bold py-2 px-6 rounded ${difficultySelected === Difficulty.VERY_HARD ? 'bg-green-800' : 'bg-green-500'}`}
+            className={` hover:bg-secondary text-white font-bold py-2 px-6 rounded ${difficultySelected === Difficulty.VERY_HARD ? 'bg-accent' : 'bg-text'}`}
             onClick={() => handleDifficulty(Difficulty.VERY_HARD)}
           >
             Very Hard
@@ -217,19 +224,33 @@ function App() {
       </section>
 
       {/* Game sections */}
-      <div className="relative container mx-auto mt-12">
+      <div className="relative container mx-auto">
         {/* Blur overlay */}
         {!difficultySelected && (
-          <div className="absolute bg-green-200/10 backdrop-blur-sm z-30 p-24 w-full h-full"></div>
+          <div className="absolute inset-0 bg-green-200/10 backdrop-blur-sm z-30"></div>
         )}
         {/* Game content */}
-        <section className={`text-center`}>
+        <section className={`flex flex-col text-center gap-11 my-10 items-center`}>
           {player ? (
-            <h2 className="text-2xl font-bold mb-8">{player?.fullName}</h2>
+            <div className="inline-flex flex-col items-center bg-text px-4 py-2 text-white justify-center rounded-lg gap-2">
+            <h2 className="text-2xl font-bold">{player?.name}</h2>
+            <p className="text-sm font-mono">{player?.fullName}</p>
+          </div>
           ) : (
-            <h2 className="text-2xl font-bold mb-8">Player Not Selected</h2>
+            <div className="inline-flex flex-col items-center bg-text px-4 py-2 text-white justify-center rounded-lg gap-2">
+            <h2 className="text-2xl font-bold ">Not Player Selected</h2>
+            <p className="text-sm font-mono">Not Player Selected</p>
+          </div>
           )}
-          <div className="w-80 h-80 bg-green-200/40 rounded-full mx-auto relative flex items-center justify-center border-green-700/40 border">
+          <div className="w-80 h-80 bg-primary rounded-full mx-auto relative flex items-center justify-center border-green-300/40 border shadow-text/40 shadow-lg">
+            {
+                  player  && player.photoUrl !== "" && (
+                    <img
+                      src={player.photoUrl}
+                      alt={player.fullName}
+                      className="w-64 h-w-64 rounded-full drop-shadow-xl backdrop-brightness-50 backdrop-contrast-75"/>
+                  )
+                }
             {characteristics.map((char: PlayerCharacteristic, index: number) => (
               <div
                 key={index}
@@ -238,40 +259,34 @@ function App() {
                   transform: `rotate(${index * angle}deg) translate(170px) rotate(-${index * angle}deg)`
                 }}
               >
-                <button 
-                  className={`bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-6 rounded ${characteristicSelected?.name === char.name ? 'bg-green-800' : ''}`}
-                  onClick={() => setCharacteristicSelected(char)}
+                <Button
+                  onClick={() => dispatch({ type: 'SET_CHARACTERISTIC', payload: char })}
+                  disabled={!difficultySelected}
+                  key={char.name}
+                >
+                  {char.name}
+                </Button>
+                {/* <button 
+                  className={`hover:bg-secondary text-white font-bold py-2 px-6 rounded ${characteristicSelected?.name === char.name ? 'bg-secondary' : 'bg-text'}`}
+                  onClick={() => dispatch({ type: 'SET_CHARACTERISTIC', payload: char })}
                   disabled={!difficultySelected}
                 >
                   {char.name}
-                </button>
+                </button> */}
                 
               </div>
             ))}
           </div>
         </section>
-
+        
         {/* Input of the user */}
-        <section className={`text-center bg-green-300/40 mt-8 p-4`}>
-          {!characteristicSelected ? (
-            <h2 className="text-2xl font-bold">Select a characteristic</h2>
-          ) : (
-            <h2 className="text-2xl font-bold">{characteristicSelected.placeholder}</h2>
-          )}
-          <div className="flex justify-center gap-2 mt-4" key={characteristicSelected?.name}>
-            {characteristicSelected && (characteristicSelected.component ? (
-              characteristicSelected.component
-            ): (
-              <input
-                type={characteristicSelected?.type}
-                placeholder={characteristicSelected?.placeholder}
-              />
-            ))}
+        <section className={`text-center bg-primary items-center p-2`}>
+          <div className="flex justify-center gap-2">
+            {renderSelectedCharacteristic()}
           </div>
         </section>
       </div>
     </div>
-
   )
 }
 
